@@ -35,32 +35,19 @@ def scrape_next_page_link(html_content):
 
 # Requisito 4
 def scrape_news(html_content):
-    soup = BeautifulSoup(html_content, "html.parser")
+    selector = Selector(text=html_content)
 
     scraped_data = {}
 
-    scraped_data['url'] = soup.find(
-        "link", {"rel": "canonical"}
-    )["href"]
-    scraped_data['title'] = soup.find(
-        "h1", {"class": "entry-title"}
-    ).text.strip()
-    scraped_data['timestamp'] = soup.find(
-        "li", {"class": "meta-date"}
-    ).text
-    scraped_data['writer'] = soup.find(
-        "h5", {"class": "title-author"}
-    ).find("a").text.strip()
-    reading_time = soup.find(
-        "li", {"class": "meta-reading-time"}
-    ).text
+    scraped_data['url'] = selector.css('link[rel="canonical"]::attr(href)').get()
+    scraped_data['title'] = selector.css(".entry-title::text").get().strip()
+    scraped_data['timestamp'] = selector.css(".meta-date::text").get()
+    scraped_data['writer'] = selector.css("span.author a::text").get()
+    reading_time = selector.css("li.meta-reading-time::text").re_first(r"\d+")
     scraped_data['reading_time'] = int(reading_time.split(" ")[0])
-    scraped_data['summary'] = soup.find(
-        "div", {"class": "entry-content"}
-    ).find("p").text.strip()
-    scraped_data['category'] = soup.find(
-        "span", {"class": "label"}
-    ).text
+    sumary = selector.css("div.entry-content > p:first-of-type *::text").getall()
+    scraped_data['summary'] = "".join(sumary).strip()
+    scraped_data['category'] = selector.css(".label::text").get()
 
     return scraped_data
 
@@ -68,15 +55,16 @@ def scrape_news(html_content):
 # Requisito 5
 def get_tech_news(amount):
     url = "https://blog.betrybe.com/"
+    url_info = fetch(url)
     data = []
     while len(data) < amount:
-        url_info = fetch(url)
-        data.append(scrape_news(url_info))
-        url = scrape_next_page_link(url_info)
+        pages = scrape_updates(url_info)
+        for page in pages:
+            page_data = fetch(page)
+            page_info = scrape_news(page_data)
+            data.append(page_info)
+        url_info = fetch(scrape_next_page_link(url_info))
 
-    news = []
-    for url in data[:amount]:
-        html = fetch(url)
-        news.append(scrape_news(html))
+    news = data[:amount]
     create_news(news)
     return news
