@@ -1,7 +1,6 @@
 import requests
 import time
 from parsel import Selector
-from bs4 import BeautifulSoup
 from tech_news.database import create_news
 
 
@@ -39,13 +38,21 @@ def scrape_news(html_content):
 
     scraped_data = {}
 
-    scraped_data['url'] = selector.css('link[rel="canonical"]::attr(href)').get()
-    scraped_data['title'] = selector.css(".entry-title::text").get().strip()
+    scraped_data['url'] = selector.css(
+        'link[rel="canonical"]::attr(href)'
+    ).get()
+    scraped_data['title'] = selector.css(
+        ".entry-title::text"
+    ).get().strip()
     scraped_data['timestamp'] = selector.css(".meta-date::text").get()
     scraped_data['writer'] = selector.css("span.author a::text").get()
-    reading_time = selector.css("li.meta-reading-time::text").re_first(r"\d+")
+    reading_time = selector.css(
+        "li.meta-reading-time::text"
+    ).re_first(r"\d+")
     scraped_data['reading_time'] = int(reading_time.split(" ")[0])
-    sumary = selector.css("div.entry-content > p:first-of-type *::text").getall()
+    sumary = selector.css(
+        "div.entry-content > p:first-of-type *::text"
+    ).getall()
     scraped_data['summary'] = "".join(sumary).strip()
     scraped_data['category'] = selector.css(".label::text").get()
 
