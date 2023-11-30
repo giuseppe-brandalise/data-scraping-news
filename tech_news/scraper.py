@@ -2,6 +2,7 @@ import requests
 import time
 from parsel import Selector
 from bs4 import BeautifulSoup
+from tech_news.database import create_news
 
 
 # Requisito 1
@@ -66,5 +67,16 @@ def scrape_news(html_content):
 
 # Requisito 5
 def get_tech_news(amount):
-    """Seu código deve vir aqui"""
-    raise NotImplementedError
+    url = "https://blog.betrybe.com/"
+    data = []
+    while len(data) < amount:
+        url_info = fetch(url)
+        data.append(scrape_news(url_info))
+        url = scrape_next_page_link(url_info)
+
+    news = []
+    for url in data[:amount]:
+        html = fetch(url)
+        news.append(scrape_news(html))
+    create_news(news)
+    return news
