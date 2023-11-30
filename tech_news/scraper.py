@@ -1,6 +1,7 @@
 import requests
 import time
 from parsel import Selector
+from bs4 import BeautifulSoup
 
 
 # Requisito 1
@@ -33,8 +34,34 @@ def scrape_next_page_link(html_content):
 
 # Requisito 4
 def scrape_news(html_content):
-    """Seu código deve vir aqui"""
-    raise NotImplementedError
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    scraped_data = {}
+
+    scraped_data['url'] = soup.find(
+        "link", {"rel": "canonical"}
+    )["href"]
+    scraped_data['title'] = soup.find(
+        "h1", {"class": "entry-title"}
+    ).text.strip()
+    scraped_data['timestamp'] = soup.find(
+        "li", {"class": "meta-date"}
+    ).text
+    scraped_data['writer'] = soup.find(
+        "h5", {"class": "title-author"}
+    ).find("a").text.strip()
+    reading_time = soup.find(
+        "li", {"class": "meta-reading-time"}
+    ).text
+    scraped_data['reading_time'] = int(reading_time.split(" ")[0])
+    scraped_data['summary'] = soup.find(
+        "div", {"class": "entry-content"}
+    ).find("p").text.strip()
+    scraped_data['category'] = soup.find(
+        "span", {"class": "label"}
+    ).text
+
+    return scraped_data
 
 
 # Requisito 5
